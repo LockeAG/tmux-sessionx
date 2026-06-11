@@ -13,7 +13,9 @@ get_sorted_sessions() {
 
 	if [[ "$(tmux_option_or_fallback "@sessionx-sort" "default")" == "attached" ]]; then
 		# Order every session by when it was last attached (most recent last).
-		sessions=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' | sort -t' ' -k1,1n | cut -d' ' -f2-)
+		# Sort numerically on the leading timestamp, then strip it; keeps session
+		# names with spaces intact without depending on a fixed field delimiter.
+		sessions=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' | sort -n | sed 's/^[0-9]* //')
 		if [[ -n "$filtered_sessions" ]]; then
 		  filtered_and_piped=$(echo "$filtered_sessions" | sed -E 's/,/|/g')
 		  sessions=$(echo "$sessions" | grep -Ev "$filtered_and_piped")
