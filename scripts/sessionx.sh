@@ -9,13 +9,28 @@ source "$CURRENT_DIR/fzf-marks.sh"
 source "$CURRENT_DIR/git-branch.sh"
 
 get_sorted_sessions() {
-	sessions=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' | sort -t' ' -k1,1n | cut -d' ' -f2-)
 	filtered_sessions=$(tmux show-option -gqv @sessionx-_filtered-sessions)
+
+	if [[ "$(tmux_option_or_fallback "@sessionx-sort" "default")" == "attached" ]]; then
+		# Order every session by when it was last attached (most recent last).
+		sessions=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' | sort -t' ' -k1,1n | cut -d' ' -f2-)
+		if [[ -n "$filtered_sessions" ]]; then
+		  filtered_and_piped=$(echo "$filtered_sessions" | sed -E 's/,/|/g')
+		  sessions=$(echo "$sessions" | grep -Ev "$filtered_and_piped")
+		fi
+		echo "$sessions"
+		return
+	fi
+
+	last_session=$(tmux display-message -p '#{client_last_session}')
+	sessions=$(tmux list-sessions | sed -E 's/:.*$//' | grep -Fxv "$last_session")
 	if [[ -n "$filtered_sessions" ]]; then
 	  filtered_and_piped=$(echo "$filtered_sessions" | sed -E 's/,/|/g')
 	  sessions=$(echo "$sessions" | grep -Ev "$filtered_and_piped")
 	fi
-	echo "$sessions"
+	local sorted
+	sorted=$(echo -e "$sessions\n$last_session" | awk '!seen[$0]++')
+	echo "$sorted"
 }
 
 tmux_option_or_fallback() {
