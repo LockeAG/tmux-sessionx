@@ -9,7 +9,7 @@ source "$CURRENT_DIR/fzf-marks.sh"
 source "$CURRENT_DIR/git-branch.sh"
 
 get_sorted_sessions() {
-	sessions=$(tmux list-sessions -F '#{session_activity} #{session_name}' | sort -t' ' -k1,1n | cut -d' ' -f2-)
+	sessions=$(tmux list-sessions -F '#{session_last_attached} #{session_name}' | sort -t' ' -k1,1n | cut -d' ' -f2-)
 	filtered_sessions=$(tmux show-option -gqv @sessionx-_filtered-sessions)
 	if [[ -n "$filtered_sessions" ]]; then
 	  filtered_and_piped=$(echo "$filtered_sessions" | sed -E 's/,/|/g')
